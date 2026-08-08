@@ -5,7 +5,11 @@ from config import settings
 logger = logging.getLogger("uvicorn.error")
 
 # Initialize asynchronous MongoDB client using settings config
-client = AsyncIOMotorClient(settings.mongo_uri)
+client = AsyncIOMotorClient(
+    settings.mongo_uri,
+    tls=True,
+    tlsAllowInvalidCertificates=True
+)
 
 # Get database connection safely
 try:

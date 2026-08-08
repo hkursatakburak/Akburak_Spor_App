@@ -15,7 +15,7 @@ class EnvConfig {
       case AppEnvironment.dev:
         return 'http://10.0.2.2:8000'; // Local FastAPI server on Android Emulator
       case AppEnvironment.prod:
-        return 'https://akburak-spor-kulubu-backend.onrender.com'; // Cloud production URL placeholder
+        return 'https://akburak-spor-app.onrender.com'; // Live Render cloud backend URL
     }
   }
 
