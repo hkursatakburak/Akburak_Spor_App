@@ -132,11 +132,21 @@
 - Built a Dio request interceptor in `ApiClient` to dynamically attach token headers to all authenticated API calls.
 - Integrated session management logic inside `AuthService` and updated profile screen logout flows to perform secure token revocation.
 
+### V2.6: Dynamic Data & UI Integration
+- Declared new stats fields (`calories`, `workouts`, `minutes`) and custom `WorkoutSessionRequest` schema in the backend models.
+- Implemented secure `get_current_user` FastAPI token extraction dependency utilizing `HTTPBearer` security.
+- Created `GET /api/user/profile` and `POST /api/user/workout-session` backend endpoints.
+- Programmed a gamified badge awarding system that dynamically pushes the `"İlk Yumruk"` badge and awards 20 bonus points on first workout completion.
+- Developed `UserService` in Flutter with async providers `userStatsFutureProvider` and `userProfileProvider` fetching real-time data from the live API.
+- Bound dynamic data on the Home Screen and Workout Screen (including the dynamic daily goal progress card).
+- Integrated complete dynamic user stats, rank titles, and a mapped list of earned badges on the Profile Screen.
+- Connected the active workout engine and round timer providers to submit completed session data to the backend automatically.
+
 ---
 
 ## Current Stage & Upcoming
 
-We have completed the V2.5 milestone and are transitioning to:
+We have completed the V2.6 milestone and are transitioning to:
 - **Phase 4: Advanced Real-time Performance & Wearable Sync**
 
 ---
@@ -164,3 +174,4 @@ We have completed the V2.5 milestone and are transitioning to:
 | **V2.3** | Hoca-Sporcu İletişim Hattı | ✅ Completed |
 | **V2.4** | Cloud Migration & Environment Setup | ✅ Completed |
 | **V2.5** | Security & Auth Hardening | ✅ Completed |
+| **V2.6** | Dynamic Data & UI Integration | ✅ Completed |

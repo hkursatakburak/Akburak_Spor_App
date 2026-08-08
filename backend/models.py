@@ -18,6 +18,9 @@ class User(BaseModel):
     rank: str = "Başlangıç"
     longest_streak: int = 0
     badges: List[UserBadge] = []
+    calories: int = 0
+    workouts: int = 0
+    minutes: int = 0
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -112,4 +115,10 @@ class Message(BaseModel):
             }
         }
     )
+
+
+class WorkoutSessionRequest(BaseModel):
+    duration_minutes: int
+    kcal: int
+    workout_type: str
 

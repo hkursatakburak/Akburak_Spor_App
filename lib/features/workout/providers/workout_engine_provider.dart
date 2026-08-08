@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/workout_models.dart';
 import '../presentation/active_workout_screen.dart';
 import '../../../core/services/feedback_service.dart';
+import '../../../core/services/user_service.dart';
 
 class WorkoutEngineNotifier extends Notifier<WorkoutState> {
   Timer? _timer;
@@ -80,6 +81,22 @@ class WorkoutEngineNotifier extends Notifier<WorkoutState> {
       _startCountdown(30, WorkoutPhase.rest); // 30s rest default
     } else {
       state = state.copyWith(phase: WorkoutPhase.finished);
+
+      // Calculate workout routine statistics and submit to backend
+      int totalSeconds = 0;
+      for (final ex in state.exercises) {
+        totalSeconds += ex.targetValue;
+      }
+      int durationMinutes = (totalSeconds / 60).round();
+      if (durationMinutes < 1) durationMinutes = 1;
+      final int kcal = durationMinutes * 8;
+
+      UserService().submitWorkoutSession(durationMinutes, kcal, "Antrenman").then((success) {
+        if (success) {
+          ref.invalidate(userStatsFutureProvider);
+          ref.invalidate(userProfileProvider);
+        }
+      });
     }
   }
 

@@ -45,7 +45,10 @@ async def init_admin_user() -> None:
                 "total_points": 2450,
                 "rank": "Kara Kuşak",
                 "longest_streak": 15,
-                "badges": []
+                "badges": [],
+                "calories": 1361,
+                "workouts": 1,
+                "minutes": 45
             }
             await db["users"].insert_one(admin_data)
             logger.info("Default admin user successfully initialized in database.")

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/feedback_service.dart';
+import '../../../core/services/user_service.dart';
 
 enum TimerMode { stopwatch, roundTimer }
 enum RoundPhase { stopped, work, rest, finished }
@@ -141,6 +142,19 @@ class TimerNotifier extends Notifier<TimerState> {
         // Finished
         _timer?.cancel();
         state = state.copyWith(phase: RoundPhase.finished, totalSeconds: 0);
+
+        // Calculate dynamic workout stats and submit to backend
+        final int workSeconds = state.totalRounds * state.workDuration;
+        int durationMinutes = (workSeconds / 60).round();
+        if (durationMinutes < 1) durationMinutes = 1;
+        final int kcal = durationMinutes * 8; // Standard estimate: 8 kcal per min
+
+        UserService().submitWorkoutSession(durationMinutes, kcal, "Sayaç").then((success) {
+          if (success) {
+            ref.invalidate(userStatsFutureProvider);
+            ref.invalidate(userProfileProvider);
+          }
+        });
       }
     } else if (state.phase == RoundPhase.rest) {
       // Go to next round

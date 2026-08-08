@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/user_service.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../widgets/badge_display.dart';
 
@@ -17,12 +18,23 @@ class ProfileScreen extends ConsumerWidget {
         (themeMode == ThemeMode.system &&
             Theme.of(context).brightness == Brightness.dark);
 
+    final profileAsync = ref.watch(userProfileProvider);
+
     return FutureBuilder<SharedPreferences>(
       future: SharedPreferences.getInstance(),
       builder: (context, snapshot) {
         final prefs = snapshot.data;
-        final userName = prefs?.getString('user_name') ?? "Hamza Kürşat Akburak";
+        final profileData = profileAsync.value ?? {};
+        
+        final userName = profileData['name'] ?? prefs?.getString('user_name') ?? "Hamza Kürşat Akburak";
         final userGender = prefs?.getString('user_gender') ?? "Erkek";
+        final totalPoints = profileData['total_points']?.toString() ?? "0";
+        final rank = profileData['rank'] ?? "Başlangıç";
+        final longestStreak = profileData['longest_streak']?.toString() ?? "0";
+        final workouts = profileData['workouts']?.toString() ?? "0";
+        final calories = profileData['calories']?.toString() ?? "0";
+        final minutes = profileData['minutes']?.toString() ?? "0";
+        final badgesList = (profileData['badges'] as List? ?? []);
 
         return Scaffold(
       body: SingleChildScrollView(
@@ -123,7 +135,7 @@ class ProfileScreen extends ConsumerWidget {
                       _buildStatColumn(
                         context,
                         "Toplam Puan",
-                        "50",
+                        totalPoints,
                         Icons.star,
                         Colors.amber,
                       ),
@@ -134,9 +146,9 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       _buildStatColumn(
                         context,
-                        "Liderlik Tablosu",
-                        "#42",
-                        Icons.leaderboard,
+                        "Unvan",
+                        rank,
+                        Icons.emoji_events,
                         Colors.blue,
                       ),
                       Container(
@@ -147,7 +159,7 @@ class ProfileScreen extends ConsumerWidget {
                       _buildStatColumn(
                         context,
                         "En Uzun Seri",
-                        "x1",
+                        "x$longestStreak",
                         Icons.local_fire_department,
                         Colors.orange,
                       ),
@@ -181,7 +193,7 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "Çaylak (Rookie)",
+                              rank,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -191,14 +203,14 @@ class ProfileScreen extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          "Seviye atlamak için bu ay 2 görevi tamamla.",
+                        Text(
+                          "Toplam ${badgesList.length} rozet kazandınız.",
                         ),
                         const SizedBox(height: 16),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
-                            value: 0.0,
+                            value: (badgesList.length / 5).clamp(0.0, 1.0),
                             backgroundColor: Colors.grey.withOpacity(0.3),
                             color: Theme.of(context).colorScheme.primary,
                             minHeight: 8,
@@ -221,31 +233,26 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   SizedBox(
                     height: 130,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: const [
-                        UserBadgeCard(
-                          name: "İlk Yumruk",
-                          description: "Antrenman yapıldı",
-                          level: "Gold",
-                        ),
-                        UserBadgeCard(
-                          name: "Demir Bilek",
-                          description: "5 antrenman serisi",
-                          level: "Silver",
-                        ),
-                        UserBadgeCard(
-                          name: "Çaylak",
-                          description: "Profil oluşturuldu",
-                          level: "Bronze",
-                        ),
-                        UserBadgeCard(
-                          name: "Disiplin",
-                          description: "1 hafta kesintisiz",
-                          level: "Gold",
-                        ),
-                      ],
-                    ),
+                    child: badgesList.isEmpty
+                        ? const Center(
+                            child: Text(
+                              "Henüz kazanılmış bir rozet yok. İlk antrenmanını tamamlayarak 'İlk Yumruk' rozetini kazan!",
+                              style: TextStyle(color: Colors.grey, fontSize: 13),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: badgesList.length,
+                            itemBuilder: (context, index) {
+                              final badge = badgesList[index];
+                              return UserBadgeCard(
+                                name: badge['name'] ?? "",
+                                description: badge['description'] ?? "",
+                                level: badge['level'] ?? "Gold",
+                              );
+                            },
+                          ),
                   ),
                   const SizedBox(height: 32),
 
@@ -256,7 +263,7 @@ class ProfileScreen extends ConsumerWidget {
                         child: _buildInfoCard(
                           context,
                           "Antrenman",
-                          "1",
+                          workouts,
                           Icons.sports_gymnastics,
                         ),
                       ),
@@ -265,7 +272,7 @@ class ProfileScreen extends ConsumerWidget {
                         child: _buildInfoCard(
                           context,
                           "Kalori Kcal",
-                          "1361",
+                          calories,
                           Icons.fastfood,
                         ),
                       ),
@@ -274,7 +281,7 @@ class ProfileScreen extends ConsumerWidget {
                         child: _buildInfoCard(
                           context,
                           "Süre Dk",
-                          "45",
+                          minutes,
                           Icons.timer,
                         ),
                       ),

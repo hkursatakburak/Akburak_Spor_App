@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/mock_data_service.dart';
 import '../models/home_models.dart';
+import '../../../core/services/user_service.dart';
 import 'package:go_router/go_router.dart';
 
 class MockRecommendItem {
@@ -57,7 +58,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userStats = ref.watch(userStatsProvider);
+    final userStatsAsync = ref.watch(userStatsFutureProvider);
     final programs = ref.watch(yourProgramsProvider);
     final locations = ref.watch(workoutLocationsProvider);
     
@@ -97,7 +98,13 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     _buildHeader(context, userName),
                     const SizedBox(height: 24),
-                    _buildStatusHeader(context, userStats),
+                    userStatsAsync.maybeWhen(
+                      data: (userStats) => _buildStatusHeader(context, userStats),
+                      orElse: () => _buildStatusHeader(
+                        context,
+                        UserStats(totalPoints: 0, workouts: 0, calories: 0, minutes: 0),
+                      ),
+                    ),
                     const SizedBox(height: 32),
                     _buildRecommendedSection(context, recommendsToShow),
                     const SizedBox(height: 32),
@@ -176,19 +183,19 @@ class HomeScreen extends ConsumerWidget {
         Expanded(
           child: _buildStatusCard(
             context,
-            title: "Haftalık Seri",
-            value: "0",
-            icon: Icons.local_fire_department,
-            color: Colors.orange,
+            title: "Toplam Puan",
+            value: "${userStats.totalPoints} Pts",
+            icon: Icons.star,
+            color: Colors.amber,
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _buildStatusCard(
             context,
-            title: "Görevler",
-            value: "0/2",
-            icon: Icons.check_circle_outline,
+            title: "Toplam Antrenman",
+            value: "${userStats.workouts} İdman",
+            icon: Icons.sports_gymnastics,
             color: Theme.of(context).colorScheme.primary,
           ),
         ),

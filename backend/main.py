@@ -1,10 +1,13 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from datetime import datetime, timezone
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
-from models import WorkoutRoutine, ExerciseItem, User, Message
+from models import WorkoutRoutine, ExerciseItem, User, Message, WorkoutSessionRequest
 from database import db, check_database_connection, init_admin_user
 from security import verify_password, get_password_hash, create_access_token
+from jose import jwt
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -191,6 +194,70 @@ MOCK_WORKOUTS = {
         )
     ]
 }
+
+
+security = HTTPBearer()
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+    """FastAPI dependency to extract JWT token from header and load the current user."""
+    token = credentials.credentials
+    try:
+        from security import JWT_SECRET, JWT_ALGORITHM
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=401, detail="Geçersiz jeton içeriği.")
+        user_data = await db["users"].find_one({"email": email})
+        if not user_data:
+            raise HTTPException(status_code=401, detail="Kullanıcı bulunamadı.")
+        return User(**user_data)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Kimlik doğrulama başarısız: {e}")
+
+@app.get("/api/user/profile", response_model=User)
+async def get_user_profile(current_user: User = Depends(get_current_user)):
+    """Fetch the profile details of the currently authenticated user."""
+    return current_user
+
+@app.post("/api/user/workout-session")
+async def submit_workout_session(req: WorkoutSessionRequest, current_user: User = Depends(get_current_user)):
+    """Record completed workout sessions, increment points, workouts, calories, and duration."""
+    points_gained = 10
+    
+    # Check if they earn the "İlk Yumruk" badge
+    badges = current_user.badges
+    has_first_badge = any(b.name == "İlk Yumruk" for b in badges)
+    
+    update_query = {
+        "$inc": {
+            "total_points": points_gained,
+            "calories": req.kcal,
+            "workouts": 1,
+            "minutes": req.duration_minutes
+        }
+    }
+    
+    if not has_first_badge:
+        # Earn the first badge!
+        new_badge = {
+            "name": "İlk Yumruk",
+            "description": "İlk antrenmanını tamamladın!",
+            "date_earned": datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        }
+        update_query["$push"] = {"badges": new_badge}
+        # Award bonus points for the badge
+        update_query["$inc"]["total_points"] += 20
+        print("Awarded first workout badge: İlk Yumruk")
+        
+    await db["users"].update_one(
+        {"email": current_user.email},
+        update_query
+    )
+    return {
+        "status": "success",
+        "message": "Antrenman başarıyla kaydedildi.",
+        "badge_earned": not has_first_badge
+    }
 
 
 @app.get("/")
