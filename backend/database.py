@@ -7,9 +7,12 @@ logger = logging.getLogger("uvicorn.error")
 # Initialize asynchronous MongoDB client using settings config
 client = AsyncIOMotorClient(settings.mongo_uri)
 
-# Get database connection
-# This automatically extracts database name from connection string URI or defaults to 'akb_app'
-db = client.get_default_database()
+# Get database connection safely
+try:
+    db = client.get_default_database(default="akb_app")
+except Exception:
+    db = client["akb_app"]
+
 if db is None or db.name in ("admin", "local"):
     db = client["akb_app"]
 
