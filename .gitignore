@@ -52,4 +52,5 @@ backend/.env
 # Android keystore files
 *.jks
 *.keystore
+key.properties
 
