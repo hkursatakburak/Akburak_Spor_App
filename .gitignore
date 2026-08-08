@@ -49,3 +49,7 @@ app.*.map.json
 __pycache__/
 backend/.env
 
+# Android keystore files
+*.jks
+*.keystore
+
